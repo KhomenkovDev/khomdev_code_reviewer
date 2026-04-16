@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KhomDev | AI Code Reviewer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Pygments CSS for code highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="glass-panel sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-code"></i> KhomDev</h2>
+                <p>AI Code Reviewer</p>
+            </div>
+            
+            <div class="input-section">
+                <h3><i class="fa-brands fa-github"></i> GitHub URL</h3>
+                <form id="github-form">
+                    <div class="input-group">
+                        <input type="url" id="repo-url" placeholder="https://github.com/..." required>
+                        <button type="submit" id="github-btn" class="btn-primary">Load</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="input-section">
+                <h3><i class="fa-solid fa-folder-open"></i> Local Files</h3>
+                <form id="local-form">
+                    <label for="local-files" class="drop-zone" id="drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Click to Select Folder or Drop Multiple .py Files</span>
+                        <input type="file" id="local-files" multiple webkitdirectory directory style="display: none;">
+                    </label>
+                </form>
+            </div>
+            
+            <div class="status-indicator" id="status-indicator">
+                <i class="fa-solid fa-circle-check" style="color: #4ec9b0;"></i> <span>Ready</span>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="glass-panel main-area">
+            <div class="chat-display" id="chat-display">
+                <div class="message system">
+                    <div class="msg-header"><i class="fa-solid fa-robot"></i> System</div>
+                    <div class="msg-body">Welcome! Please paste a GitHub URL or upload a directory to begin the AI code review.</div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <form id="chat-form">
+                    <textarea id="chat-input" placeholder="Ask follow-up questions about the code, request refactoring, etc..." rows="2" disabled></textarea>
+                    <button type="submit" id="chat-btn" class="btn-primary tooltip" disabled>
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span class="tooltiptext">Send Message</span>
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Analyzing codebase... this may take a minute.</p>
+    </div>
+
+    <!-- External dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

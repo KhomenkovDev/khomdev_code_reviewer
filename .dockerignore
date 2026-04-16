@@ -1,0 +1,12 @@
+.git
+.idea
+.pytest_cache
+__pycache__
+venv
+env
+.env
+build/
+dist/
+*.spec
+icon.png
+screenshot.png
