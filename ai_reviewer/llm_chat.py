@@ -34,7 +34,7 @@ class LLMChatManager:
             raise ValueError("GEMINI_API_KEY is not set.")
         
         self.client = genai.Client(api_key=api_key)
-        self.chat_session = self.client.chats.create(model='gemini-2.5-pro')
+        self.chat_session = self.client.chats.create(model='gemini-2.5-flash')
 
         # Construct the massive context string
         context = "Here are the files for the codebase we will be discussing:\n\n"

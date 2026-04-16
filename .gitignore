@@ -9,3 +9,5 @@ build/
 dist/
 *.spec
 .DS_Store
+*.egg-info/
+*.egg
