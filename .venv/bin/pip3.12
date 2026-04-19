@@ -1,4 +1,4 @@
-#!/Users/nova/.gemini/antigravity/scratch/khomdev_code_reviewer/.venv/bin/python3.12
+#!/Users/nova/.gemini/antigravity/scratch/web3-auditor/.venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

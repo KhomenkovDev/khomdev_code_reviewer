@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /Users/nova/.gemini/antigravity/scratch/khomdev_code_reviewer/.venv
+set -gx VIRTUAL_ENV /Users/nova/.gemini/antigravity/scratch/web3-auditor/.venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

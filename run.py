@@ -1,4 +1,4 @@
-from ai_reviewer.cli import main
+from web3_auditor.cli import main
 
 if __name__ == "__main__":
     main()
