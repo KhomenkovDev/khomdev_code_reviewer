@@ -1,79 +1,20 @@
-# KhomDev Code Reviewer
+# KhomDev Web3 & Python Reviewer 🛡️
 
-<div align="center">
-  <img src="icon.png" width="150" alt="KhomDev Code Reviewer Icon" />
-</div>
-
-![Screenshot 1](screenshots/Screenshot%202026-04-16%20at%2020.29.46.png)
-![Screenshot 2](screenshots/Screenshot%202026-04-16%20at%2020.32.10.png)
-An AI-powered local code reviewer with a PyQt6 Graphical User Interface. This tool allows you to scan a directory, analyze your code using LLMs, and review feedback cleanly in a desktop application.
-
-## Installation
-
-You can install `ai-code-reviewer` directly using `pip`:
-
-```bash
-pip install .
-```
-
-For development, install in editable mode:
-
-```bash
-pip install -e .
-```
-
-## Usage
-
-Once installed, you can start the application by running the `ai-reviewer` command from your terminal:
-
-```bash
-ai-reviewer
-```
-
-## Running the Web App
-
-You can also run the modern, glassmorphism web application version locally:
-
-1. Add your `GEMINI_API_KEY` to the `.env` file.
-2. Run the web server via Uvicorn:
-```bash
-uvicorn web.app:app --reload
-```
-3. Open `http://localhost:8000` in your browser.
-
-## Deployment & Packaging
-
-### 1. Desktop Packaging
-To package the native desktop application for your operating system (Windows/macOS/Linux):
-1. Install PyInstaller: `pip install pyinstaller`
-2. Run the build script: `pyinstaller --onefile --windowed AI\ Code\ Reviewer.spec`
-3. Locate your compiled executable in the `/dist` directory.
-4. Upload this file to your GitHub Repository under **Releases**.
-
-### 2. Google Cloud Deployment (Web App)
-The web application is fully prepared for containerized deployment to Google Cloud Run.
-1. Build and submit your Docker image using Google Cloud Build:
-```bash
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/khomdev-code-reviewer
-```
-2. Deploy the image to Cloud Run:
-```bash
-gcloud run deploy khomdev-code-reviewer \
-  --image gcr.io/YOUR_PROJECT_ID/khomdev-code-reviewer \
-  --platform managed \
-  --allow-unauthenticated \
-  --set-env-vars="GEMINI_API_KEY=your_actual_key_here"
-```
-
-Alternatively, you can run the `run.py` script from the repository root to launch the desktop app locally:
-
-```bash
-python run.py
-```
+Automated Smart Contract & Python Code Reviewer. Secure your DeFi protocols and Python infrastructure with AI-powered deep security audits and performance optimization.
 
 ## Features
+- **Smart Contract Audits**: Detect Reentrancy, Overflow, and logic vulnerabilities in Solidity.
+- **Python Security**: Identify performance bottlenecks and security flaws in backend code.
+- **GitHub Integration**: Load entire repositories for a comprehensive audit.
+- **Upgraded Code Examples**: AI-generated secure and optimized versions of your functions.
 
-- Local directory scanning to pick up code files
-- AI analysis utilizing the `google-genai` library
-- PyQt6-based clean graphical user interface
-- Rendering of markdown-formatted responses from the LLM
+## Tech Stack
+- **Backend**: Python, FastAPI
+- **Review Engine**: Custom logic with Google Gemini 2.5 Flash
+- **Frontend**: Dark-mode IDE-style interface
+- **Architecture**: Asynchronous code analysis
+
+## Getting Started
+1. `pip install -e .`
+2. Set `GEMINI_API_KEY`
+3. `python run.py`

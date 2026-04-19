@@ -1,15 +1,15 @@
 :root {
-    --bg-color-1: #0f172a;
-    --bg-color-2: #1e1b4b;
-    --glass-bg: rgba(255, 255, 255, 0.03);
+    --bg-color-1: #05050A;
+    --bg-color-2: #0A0A1F;
+    --glass-bg: rgba(18, 18, 42, 0.4);
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --accent: #4ec9b0; /* VS Code like accent */
-    --accent-user: #569cd6;
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --primary: #A855F7; /* KhomDev Purple */
+    --primary-hover: #9333EA;
+    --text-main: #F9FAFB;
+    --text-muted: #9CA3AF;
+    --accent: #22D3EE; /* KhomDev Cyan */
+    --accent-user: #818CF8;
 }
 
 * {

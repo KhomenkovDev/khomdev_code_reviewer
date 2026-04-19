@@ -39,21 +39,24 @@ class LLMChatManager:
         # Construct the massive context string
         context = "Here are the files for the codebase we will be discussing:\n\n"
         for file_path, content in files:
-            context += f"### FILE: {file_path} ###\n```python\n{content}\n```\n\n"
+            ext = file_path.split('.')[-1] if '.' in file_path else ''
+            context += f"### FILE: {file_path} ###\n```{ext}\n{content}\n```\n\n"
 
         prompt = f"""
 {context}
 
-You are an expert Python code reviewer. Please review the code provided above.
+You are an expert Web3 Security Auditor and Senior Python Engineer. Please review the codebase provided above.
 Your task is to provide:
-1. An overview of what the codebase does.
-2. Suggestions for further steps, improvements, and better ways to implement some blocks.
-3. Cleaned, more advanced, and Pythonic versions of critical files.
+1. An overview of what the codebase does (Smart Contracts, Logic, Infrastructure).
+2. Deep Security Audit: Identify vulnerabilities (e.g., Reentrancy, Overflow, Logic errors in Sol or Security flaws in Python).
+3. Suggestions for Improvement: Optimization (Gas optimization for Solidity, Pythonic improvements).
+4. Upgraded Code Examples: Provide more secure or efficient versions of critical functions.
 
 Please structure your response strictly in Markdown format with the following headings:
-## Codebase Overview
-## Suggestions for Improvement
-## Upgraded Code Examples
+## Codebase & Architecture Overview
+## Security Audit Results
+## Performance & Logic Improvements
+## Secure Code Upgrades
 """
         return self._send_with_retry(prompt)
 
