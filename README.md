@@ -1,4 +1,5 @@
 # KhomDev Web3 & Python Reviewer 🛡️
+![Web3 Auditor](screenshots/Screenshot%202026-04-20%20at%2011.44.09.png)
 
 Automated Smart Contract & Python Code Reviewer. Secure your DeFi protocols and Python infrastructure with AI-powered deep security audits and performance optimization.
 

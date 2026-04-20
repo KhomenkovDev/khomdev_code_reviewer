@@ -1,3 +1,4 @@
+import os
 import subprocess
 import tempfile
 import shutil
@@ -22,16 +23,26 @@ class GitManager:
         
         try:
             print(f"Cloning {repo_url} into {self.temp_dir}...")
+            # Set environment variables to prevent git from prompting for credentials
+            env = os.environ.copy()
+            env["GIT_TERMINAL_PROMPT"] = "0"
+            
             subprocess.run(
-                ["git", "clone", repo_url, self.temp_dir],
+                ["git", "clone", "--depth", "1", repo_url, self.temp_dir],
                 check=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                env=env
             )
             return self.temp_dir
         except subprocess.CalledProcessError as e:
             self.cleanup()
-            raise RuntimeError(f"Failed to clone repository: {e.stderr.decode('utf-8')}")
+            error_msg = e.stderr.decode('utf-8')
+            if "terminal prompts disabled" in error_msg or "could not read Username" in error_msg:
+                raise RuntimeError("Failed to clone repository: The repository might be private or require authentication. Please ensure the URL is public.")
+            elif "not found" in error_msg.lower():
+                raise RuntimeError(f"Failed to clone repository: Repository not found at {repo_url}. Please check the URL.")
+            raise RuntimeError(f"Failed to clone repository: {error_msg}")
 
     def cleanup(self):
         """

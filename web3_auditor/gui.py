@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QColor
 
-from .scanner import get_python_files
+from .scanner import get_source_files
 from .github import GitManager
 from .llm_chat import LLMChatManager
 
@@ -29,12 +29,12 @@ class LoadWorker(QThread):
             files = []
             if self.mode == "github":
                 repo_path = self.git_manager.clone_repository(self.target)
-                files = get_python_files(repo_path)
+                files = get_source_files(repo_path)
             elif self.mode == "local":
-                files = get_python_files(self.target)
+                files = get_source_files(self.target)
             
             if not files:
-                self.error.emit("No Python files found in the target.")
+                self.error.emit("No supported files (.py, .sol, .js) found in the target.")
                 return
 
             review_output = self.llm_manager.start_session(files)
@@ -131,7 +131,7 @@ class AICodeReviewerGUI(QMainWindow):
         
         # Drag Drop Area
         drop_layout = QHBoxLayout()
-        self.drop_label = DropLabel("Drag and Drop Local Folder or .py File Here")
+        self.drop_label = DropLabel("Drag and Drop Local Folder, .py, .sol, or .js File Here")
         self.drop_label.fileDropped.connect(self.load_local_file)
         
         browse_layout = QVBoxLayout()
@@ -186,7 +186,7 @@ class AICodeReviewerGUI(QMainWindow):
         self.start_loading("local", file_path)
 
     def browse_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Select Python File", "", "Python Files (*.py);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, "Select Code File", "", "Code Files (*.py *.sol *.js);;All Files (*)")
         if path:
             self.load_local_file(path)
             

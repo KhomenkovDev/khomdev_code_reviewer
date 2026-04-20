@@ -9,9 +9,9 @@ class LLMChatManager:
         self.client: Optional[genai.Client] = None
         self.chat_session = None
 
-    def _send_with_retry(self, message: str, retries: int = 4) -> str:
+    def _send_with_retry(self, message: str, retries: int = 6) -> str:
         """Helper method to send a message with exponential backoff on 503/disconnect errors."""
-        delay = 2
+        delay = 4
         for attempt in range(retries):
             try:
                 response = self.chat_session.send_message(message)
@@ -20,6 +20,7 @@ class LLMChatManager:
                 error_str = str(e).lower()
                 is_transient = any(term in error_str for term in ["503", "disconnected", "unavailable", "demand", "500"])
                 if is_transient and attempt < retries - 1:
+                    print(f"Transient error: {error_str}. Retrying in {delay}s... (Attempt {attempt + 1}/{retries})")
                     time.sleep(delay)
                     delay *= 2  # Exponential backoff
                     continue

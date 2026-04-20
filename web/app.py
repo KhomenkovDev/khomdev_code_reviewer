@@ -1,6 +1,5 @@
 import os
 import uuid
-import uuid
 import tempfile
 import markdown
 import shutil
@@ -13,14 +12,14 @@ from fastapi.templating import Jinja2Templates
 import uvicorn
 from dotenv import load_dotenv
 
-from ai_reviewer.github import GitManager
-from ai_reviewer.scanner import get_python_files
-from ai_reviewer.llm_chat import LLMChatManager
+from web3_auditor.github import GitManager
+from web3_auditor.scanner import get_source_files
+from web3_auditor.llm_chat import LLMChatManager
 
 # Load env variables
 load_dotenv()
 
-app = FastAPI(title="KhomDev Code Reviewer Web App")
+app = FastAPI(title="KhomDev Web3 Auditor Web App")
 
 # Mount static and templates (handle paths elegantly for execution anywhere)
 BASE_DIR = Path(__file__).resolve().parent
@@ -49,11 +48,11 @@ async def load_github(repo_url: str = Form(...)):
     
     try:
         repo_path = git_manager.clone_repository(repo_url)
-        files = get_python_files(repo_path)
+        files = get_source_files(repo_path)
         
         if not files:
             git_manager.cleanup()
-            return JSONResponse({"status": "error", "message": "No Python files found."}, status_code=400)
+            return JSONResponse({"status": "error", "message": "No supported files (.py, .sol, .js) found in the repository."}, status_code=400)
             
         review_output = manager.start_session(files)
         
@@ -71,25 +70,27 @@ async def load_local(files: List[UploadFile] = File(...)):
     session_id = str(uuid.uuid4())
     manager = get_session(session_id)
     
-    temp_dir = tempfile.mkdtemp(prefix="ai_reviewer_web_upload_")
-    python_files = []
+    temp_dir = tempfile.mkdtemp(prefix="web3_auditor_web_upload_")
+    source_files = []
     
     try:
+        valid_extensions = {".py", ".sol", ".js"}
         for uf in files:
-            # We only process python files
-            if uf.filename.endswith(".py"):
+            # We process supported source files
+            ext = Path(uf.filename).suffix
+            if ext in valid_extensions:
                 content = await uf.read()
                 try:
                     text_content = content.decode("utf-8")
-                    python_files.append((uf.filename, text_content))
+                    source_files.append((uf.filename, text_content))
                 except UnicodeDecodeError:
                     continue # Skip binary
                     
-        if not python_files:
+        if not source_files:
             shutil.rmtree(temp_dir)
-            return JSONResponse({"status": "error", "message": "No Python files found in upload."}, status_code=400)
+            return JSONResponse({"status": "error", "message": "No supported files (.py, .sol, .js) found in upload."}, status_code=400)
             
-        review_output = manager.start_session(python_files)
+        review_output = manager.start_session(source_files)
         html_review = markdown.markdown(review_output, extensions=['fenced_code', 'codehilite'])
         
         return {"status": "success", "session_id": session_id, "html_review": html_review, "raw_review": review_output}
