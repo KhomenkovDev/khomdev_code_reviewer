@@ -52,25 +52,42 @@ async def run_audit_task(session_id: str):
             if not files:
                 raise ValueError("No supported files found.")
 
-            # 3. Analyzing (Static + LLM)
-            session.update_status("analyzing", "Synthesizing security results...")
+            # 3. Static Analysis
+            session.update_status("analyzing", "Running static analysis engines...")
+            db.add(session)
+            db.commit()
+            
+            from web3_auditor.engines.static import BanditRunner, SlitherRunner, VyperRunner
+            
+            static_findings = []
+            for RunnerCls in [VyperRunner, SlitherRunner, BanditRunner]:
+                try:
+                    runner = RunnerCls()
+                    res = runner.analyze(files)
+                    static_findings.extend(res.findings)
+                except Exception as e:
+                    logger.warning("Runner %s failed: %s", RunnerCls.__name__, e)
+
+            # 4. Semantic AI Audit
+            session.update_status("analyzing", "Synthesizing AI security report...")
             db.add(session)
             db.commit()
             
             engine_ai = AuditEngine()
-            result = engine_ai.analyze_codebase(files)
+            result = engine_ai.analyze_codebase(files, static_findings=static_findings)
             
-            # 4. Finalizing
+            # 5. Finalizing
             session.risk_score = result.risk_score
             session.raw_results = result.raw_json
             
-            # Basic markdown to HTML for report (we can improve this later with a dedicated template)
+            # Basic markdown to HTML for report
             import markdown
             session.html_report = markdown.markdown(result.overview, extensions=["fenced_code", "codehilite"])
             
             session.update_status("complete", "Audit finished successfully.")
             db.add(session)
             db.commit()
+
             
         except Exception as e:
             logger.exception("Audit task failed for session %s", session_id)

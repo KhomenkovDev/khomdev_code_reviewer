@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VulnAudit — Institutional Security Protocol</title>
+    <title>VulnAudit — High-Fidelity Web3 Intelligence</title>
+    
+    <!-- Meta for SEO -->
+    <meta name="description" content="Institutional-grade smart contract auditing for Vyper 0.4+ and Solidity using Gemini 2.5 Flash synthesis.">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -17,7 +21,7 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fa-solid fa-shield-halved"></i>
-                    VulnAudit <span class="version">V1.0</span>
+                    VulnAudit <span class="version">V0.4.0</span>
                 </div>
             </div>
 
@@ -34,11 +38,19 @@
                 </button>
 
                 <div id="active-sessions-list" style="margin-top: 40px;">
-                    <label>Active Sessions</label>
-                    <div id="sessions-container">
-                        <!-- Dynamic sessions list -->
+                    <label>Session Intelligence</label>
+                    <div id="sessions-container" style="color: var(--text-muted); font-size: 0.8rem;">
+                        <p><i class="fa-solid fa-info-circle"></i> Monitoring Vyper 0.4+ and Solidity 0.8.x targets.</p>
                     </div>
                 </div>
+            </div>
+            
+            <div style="padding: 32px; border-top: 1px solid var(--nordic-border);">
+                 <div style="font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono';">
+                    NODE_STATUS: ONLINE<br>
+                    ENGINE: GEMINI_2.5_FLASH<br>
+                    PIPELINE: MULTI_STAGE_SAST_AI
+                 </div>
             </div>
         </aside>
 
@@ -50,33 +62,35 @@
                     <span id="global-status-text">SYSTEM READY</span>
                 </div>
                 <div class="nav-actions">
-                    <!-- Future actions like PDF export -->
+                    <span style="color: var(--text-muted); font-size: 0.7rem; font-family: 'JetBrains Mono';">AUDIT_LOG_STREAM v2.0</span>
                 </div>
             </header>
 
             <section class="dashboard-content" id="dashboard-view">
                 <!-- Welcome State -->
-                <div id="welcome-state" class="report-panel" style="text-align: center; margin-top: 10vh;">
-                    <i class="fa-solid fa-satellite-dish" style="font-size: 4rem; color: var(--accent-cyan); margin-bottom: 24px;"></i>
-                    <h1>Awaiting Command</h1>
-                    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">
-                        Enter a GitHub repository URL to initiate an institutional security audit using Gemini 2.5 Flash synthesis.
+                <div id="welcome-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+                    <div style="position: relative;">
+                        <i class="fa-solid fa-satellite-dish" style="font-size: 5rem; color: var(--accent-cyan); margin-bottom: 32px; filter: drop-shadow(0 0 20px var(--accent-glow));"></i>
+                    </div>
+                    <h1 style="font-weight: 800; font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 16px;">Awaiting Security Parameters</h1>
+                    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; font-size: 1.1rem;">
+                        Connect a repository to initiate an institutional security audit. The protocol will execute static analysis and AI-driven semantic synthesis.
                     </p>
                 </div>
 
                 <!-- Active Audit State (Stats) -->
                 <div id="audit-stats" class="stats-grid" style="display: none;">
                     <div class="stat-card">
-                        <div class="stat-label">Security Score</div>
-                        <div class="stat-value" id="stat-score">--</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Files Scanned</div>
-                        <div class="stat-value" id="stat-files">--</div>
+                        <div class="stat-label">Security Health</div>
+                        <div class="stat-value" id="stat-score" style="color: var(--accent-cyan);">--</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Risk Level</div>
                         <div class="stat-value" id="stat-risk">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Protocol Status</div>
+                        <div class="stat-value" id="stat-files" style="font-size: 1rem; color: var(--text-secondary);">SCANNING...</div>
                     </div>
                 </div>
 
@@ -109,7 +123,12 @@
 
             startBtn.disabled = true;
             statusDot.classList.add('busy');
-            statusText.innerText = 'INITIALIZING...';
+            statusText.innerText = 'INITIALIZING PROTOCOL...';
+            
+            welcomeState.style.display = 'none';
+            auditStats.style.display = 'grid';
+            reportView.style.display = 'none';
+            document.getElementById('stat-files').innerText = 'INITIALIZING...';
 
             try {
                 const res = await fetch('/api/audit', {
@@ -122,7 +141,7 @@
                 pollStatus();
             } catch (err) {
                 console.error(err);
-                statusText.innerText = 'ERROR';
+                statusText.innerText = 'PROTOCOL_ERROR';
                 startBtn.disabled = false;
             }
         });
@@ -135,14 +154,15 @@
                 const data = await res.json();
 
                 statusText.innerText = data.message.toUpperCase();
+                document.getElementById('stat-files').innerText = data.message.toUpperCase();
                 
                 if (data.status === 'complete') {
                     renderReport(data);
                 } else if (data.status === 'error') {
-                    alert('Audit failed: ' + data.message);
+                    alert('Security Protocol Failed: ' + data.message);
                     resetUI();
                 } else {
-                    setTimeout(pollStatus, 2000);
+                    setTimeout(pollStatus, 1500);
                 }
             } catch (err) {
                 console.error(err);
@@ -157,17 +177,28 @@
             auditStats.style.display = 'grid';
             reportView.style.display = 'block';
             
-            document.getElementById('stat-score').innerText = (10 - data.risk_score).toFixed(1);
-            document.getElementById('stat-risk').innerText = data.risk_score > 7 ? 'CRITICAL' : data.risk_score > 4 ? 'MEDIUM' : 'LOW';
-            document.getElementById('stat-files').innerText = 'SCAN COMPLETE';
+            const healthScore = (10 - data.risk_score).toFixed(1);
+            const riskLevel = data.risk_score > 7 ? 'CRITICAL' : data.risk_score > 4 ? 'ELEVATED' : 'STABLE';
+            const riskColor = data.risk_score > 7 ? 'var(--severity-critical)' : data.risk_score > 4 ? 'var(--severity-high)' : 'var(--severity-low)';
             
-            reportHtml.innerHTML = data.html_report || '<h1>No findings reported.</h1>';
+            document.getElementById('stat-score').innerText = healthScore + '/10';
+            document.getElementById('stat-risk').innerText = riskLevel;
+            document.getElementById('stat-risk').style.color = riskColor;
+            document.getElementById('stat-files').innerText = 'ANALYSIS COMPLETE';
+            
+            reportHtml.innerHTML = data.html_report || '<h1>No technical vulnerabilities identified.</h1>';
+            
+            // Auto scroll to report
+            reportView.scrollIntoView({ behavior: 'smooth' });
         }
 
         function resetUI() {
             statusDot.classList.remove('busy');
             statusText.innerText = 'SYSTEM READY';
             startBtn.disabled = false;
+            welcomeState.style.display = 'flex';
+            auditStats.style.display = 'none';
+            reportView.style.display = 'none';
         }
     </script>
 </body>
