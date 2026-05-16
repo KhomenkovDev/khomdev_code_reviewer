@@ -101,7 +101,12 @@ async def run_audit_task(session_id: str):
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Starlette 0.27+ changed the Jinja2Templates.TemplateResponse signature:
+    # the request is now the first positional arg. Passing the legacy
+    # `(name, {"request": request})` form makes Starlette interpret the dict
+    # as the template name, which crashes Jinja's cache with
+    # `TypeError: unhashable type: 'dict'`.
+    return templates.TemplateResponse(request, "index.html")
 
 
 @router.post("/api/audit", response_model=AuditResponse)

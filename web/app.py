@@ -30,8 +30,8 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="VulnAudit Institutional",
-    description="Professional-grade Web3 & Python Security Analysis Portal",
+    title="KhomDev Auditor",
+    description="High-fidelity Web3 & Python security analysis — Vyper 0.4+ and Solidity 0.8.x.",
     version="1.0.0",
     lifespan=lifespan
 )

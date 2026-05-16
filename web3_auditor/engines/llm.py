@@ -20,6 +20,9 @@ class LLMSettings(BaseSettings):
     model: str = "gemini-2.5-flash"
     max_retries: int = 5
     initial_delay: int = 4
+    # Number of full-prompt re-tries when the LLM returns text that can't be
+    # parsed as JSON. Cheap insurance against transient formatting drift.
+    parse_retries: int = 3
 
 
 @dataclass
@@ -29,6 +32,10 @@ class AuditResult:
     findings: list[Finding] = field(default_factory=list)
     improvements: list[str] = field(default_factory=list)
     raw_json: str = ""
+    # True when the model returned a response that couldn't be parsed even
+    # after retries. The API serializes this via `risk_score = -1.0` so the
+    # frontend can render a distinct "AUDIT FAILED" state.
+    parse_failed: bool = False
 
 
 SYSTEM_PROMPT = """You are an Elite Web3 Security Auditor specializing in Vyper 0.4+ and Solidity.
@@ -83,13 +90,13 @@ class AuditEngine:
         self.client = genai.Client(api_key=self.settings.api_key)
 
     def analyze_codebase(
-        self, 
-        files: list[tuple[str, str]], 
+        self,
+        files: list[tuple[str, str]],
         static_findings: list[Finding] | None = None
     ) -> AuditResult:
         """
         Synthesizes a full security report.
-        
+
         Args:
             files: List of (filename, content) tuples.
             static_findings: Findings from SAST tools to be validated by the AI.
@@ -98,16 +105,39 @@ class AuditEngine:
         # This includes source code and SAST results.
         context = self._build_context(files, static_findings)
         prompt = f"### CONTEXT START ###\n{context}\n### CONTEXT END ###\n\n{SYSTEM_PROMPT}"
-        
-        # Send the prompt to Gemini with retry logic to handle rate limits or transient errors.
-        raw_text = self._send_with_retry(prompt)
-        
-        # Parse the JSON response from the AI.
-        parsed = self._parse_json(raw_text)
-        
+
+        # Try up to N times to extract structured JSON. Each attempt sends the
+        # prompt fresh — LLM stochasticity is the dominant failure mode here, so
+        # a single retry often unblocks an audit that would otherwise show a
+        # misleading "10/10 STABLE" fallback (see #parse-failure rendering).
+        parsed: dict[str, Any] | None = None
+        raw_text = ""
+        for attempt in range(self.settings.parse_retries):
+            raw_text = self._send_with_retry(prompt)
+            parsed = self._parse_json(raw_text)
+            if parsed is not None:
+                break
+            logger.warning(
+                "LLM response could not be parsed as JSON on attempt %d/%d "
+                "(response length: %d chars). Retrying...",
+                attempt + 1, self.settings.parse_retries, len(raw_text),
+            )
+
         if not parsed:
-            # If the AI fails to produce valid JSON, we return a fallback result.
-            return AuditResult(overview="Failed to parse AI response. The audit may be incomplete.", raw_json=raw_text)
+            # All retries exhausted. Return a fallback with `risk_score = -1.0`
+            # as a sentinel so the frontend can render a clear "AUDIT FAILED"
+            # state instead of misinterpreting the default 0.0 as a perfect score.
+            return AuditResult(
+                overview=(
+                    "The AI returned a response that could not be parsed as "
+                    "structured JSON, even after retries. The audit could not "
+                    "be completed — please retry, or inspect the raw model "
+                    "output for partial findings."
+                ),
+                risk_score=-1.0,
+                parse_failed=True,
+                raw_json=raw_text,
+            )
             
         # Map the AI-generated findings into our Finding dataclass.
         findings = [
@@ -180,19 +210,105 @@ class AuditEngine:
 
     def _parse_json(self, text: str) -> dict[str, Any] | None:
         """
-        Extracts and parses the JSON block from the LLM's response.
-        Handles common markdown code block wrappings.
+        Extract a JSON object from the LLM's response.
+
+        The model is asked to return strict JSON but in practice may wrap it
+        in markdown code fences, prefix it with prose, or append a trailing
+        comment. This parser tries four strategies in order of cost:
+
+          1. Parse the entire response as JSON.
+          2. Strip a leading ```json or ``` fence and try again.
+          3. Find every balanced `{...}` substring in the response (using a
+             stack-based scanner that respects strings and escapes) and try to
+             parse each candidate, largest first. The first one that yields a
+             dict with `risk_score` or `findings` is returned.
+
+        Returns the parsed dict on success, or ``None`` if every strategy fails.
         """
-        text = text.strip()
-        # Look for JSON code blocks
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
-        
-        try:
-            return cast(dict[str, Any], json.loads(text))
-        except json.JSONDecodeError:
-            logger.error("AI returned invalid JSON. Length: %d", len(text))
+        if not text:
             return None
+        text = text.strip()
+
+        # Strategy 1: whole-text parse.
+        try:
+            obj = json.loads(text)
+            if isinstance(obj, dict):
+                return cast(dict[str, Any], obj)
+        except json.JSONDecodeError:
+            pass
+
+        # Strategy 2: strip markdown code fences.
+        fenced = text
+        if "```json" in fenced:
+            fenced = fenced.split("```json", 1)[1].split("```", 1)[0]
+        elif "```" in fenced:
+            fenced = fenced.split("```", 1)[1].split("```", 1)[0]
+        fenced = fenced.strip()
+        if fenced and fenced is not text:
+            try:
+                obj = json.loads(fenced)
+                if isinstance(obj, dict):
+                    return cast(dict[str, Any], obj)
+            except json.JSONDecodeError:
+                pass
+
+        # Strategy 3: scan for balanced `{...}` substrings.
+        candidates = self._find_balanced_json_objects(text)
+        candidates.sort(key=len, reverse=True)
+        for candidate in candidates:
+            try:
+                obj = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(obj, dict) and (
+                "risk_score" in obj or "findings" in obj or "overview" in obj
+            ):
+                return cast(dict[str, Any], obj)
+
+        logger.error(
+            "AI returned invalid JSON after fence-strip and balanced-brace scan. "
+            "Length: %d, first 200 chars: %r",
+            len(text), text[:200],
+        )
+        return None
+
+    @staticmethod
+    def _find_balanced_json_objects(text: str) -> list[str]:
+        """
+        Return every balanced `{...}` substring in `text`, respecting JSON
+        string syntax (so braces inside string literals don't confuse the
+        depth counter).
+        """
+        results: list[str] = []
+        i = 0
+        n = len(text)
+        while i < n:
+            if text[i] != "{":
+                i += 1
+                continue
+            depth = 0
+            in_string = False
+            escape = False
+            j = i
+            while j < n:
+                ch = text[j]
+                if in_string:
+                    if escape:
+                        escape = False
+                    elif ch == "\\":
+                        escape = True
+                    elif ch == '"':
+                        in_string = False
+                elif ch == '"':
+                    in_string = True
+                elif ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        results.append(text[i:j + 1])
+                        break
+                j += 1
+            i = j + 1
+        return results
 

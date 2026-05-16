@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VulnAudit — High-Fidelity Web3 Intelligence</title>
+    <title>KhomDev Auditor — High-Fidelity Web3 Intelligence</title>
     
     <!-- Meta for SEO -->
     <meta name="description" content="Institutional-grade smart contract auditing for Vyper 0.4+ and Solidity using Gemini 2.5 Flash synthesis.">
@@ -21,7 +21,7 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fa-solid fa-shield-halved"></i>
-                    VulnAudit <span class="version">V0.4.0</span>
+                    KhomDev Auditor <span class="version">V0.4.0</span>
                 </div>
             </div>
 
@@ -172,22 +172,37 @@
         function renderReport(data) {
             statusDot.classList.remove('busy');
             startBtn.disabled = false;
-            
+
             welcomeState.style.display = 'none';
             auditStats.style.display = 'grid';
             reportView.style.display = 'block';
-            
+
+            // Backend signals a parse failure via `risk_score < 0` (sentinel).
+            // Without this branch a default `risk_score = 0.0` would render
+            // as "10.0/10 STABLE" — the misleading state that originally
+            // looked like a passing audit.
+            if (typeof data.risk_score === 'number' && data.risk_score < 0) {
+                document.getElementById('stat-score').innerText = 'N/A';
+                document.getElementById('stat-risk').innerText = 'AUDIT FAILED';
+                document.getElementById('stat-risk').style.color = 'var(--severity-critical)';
+                document.getElementById('stat-files').innerText = 'PARSE ERROR — RETRY';
+                reportHtml.innerHTML = data.html_report
+                    || '<h1>The AI response could not be parsed. Click <b>Initialize Protocol</b> to retry.</h1>';
+                reportView.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
             const healthScore = (10 - data.risk_score).toFixed(1);
             const riskLevel = data.risk_score > 7 ? 'CRITICAL' : data.risk_score > 4 ? 'ELEVATED' : 'STABLE';
             const riskColor = data.risk_score > 7 ? 'var(--severity-critical)' : data.risk_score > 4 ? 'var(--severity-high)' : 'var(--severity-low)';
-            
+
             document.getElementById('stat-score').innerText = healthScore + '/10';
             document.getElementById('stat-risk').innerText = riskLevel;
             document.getElementById('stat-risk').style.color = riskColor;
             document.getElementById('stat-files').innerText = 'ANALYSIS COMPLETE';
-            
+
             reportHtml.innerHTML = data.html_report || '<h1>No technical vulnerabilities identified.</h1>';
-            
+
             // Auto scroll to report
             reportView.scrollIntoView({ behavior: 'smooth' });
         }
